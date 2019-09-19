@@ -51,6 +51,8 @@ public class ApplicationTests {
 		logger.info("----------------------------------------------------------------------------");
 	}
 	
-	
+	@Test
+	public void contextLoads() throws Exception {
+	}
 
 }

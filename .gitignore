@@ -40,3 +40,5 @@ target/
 node_modules/
 
 
+# Ooops
+META-INF
