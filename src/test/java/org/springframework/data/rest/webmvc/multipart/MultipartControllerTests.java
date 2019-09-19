@@ -1,13 +1,7 @@
 package org.springframework.data.rest.webmvc.multipart;
 
-import java.io.File;
-import java.io.FileInputStream;
-import java.util.HashMap;
-import java.util.Map;
-
 import org.junit.Test;
 import org.springframework.mock.web.MockMultipartFile;
-import org.springframework.web.multipart.MultipartFile;
 
 public class MultipartControllerTests extends ApplicationTests{
 
@@ -109,17 +103,5 @@ public class MultipartControllerTests extends ApplicationTests{
 		$.DELETE("m1").is2xx();
         
 	}	
-	
-	private MultipartFile createTextResource() throws Exception {
-		Long name = System.currentTimeMillis();
-		return new MockMultipartFile("file", name+".txt", "text/plain", name.toString().getBytes());
-
-	}
-	
-	private MultipartFile createMediaResource() throws Exception {
-		Long name = System.currentTimeMillis();
-		File sample = new File("./docs/sample.mp4");
-		return new MockMultipartFile("file", name+".mp4", "text/plain", new FileInputStream(sample));
-	}
 	
 }

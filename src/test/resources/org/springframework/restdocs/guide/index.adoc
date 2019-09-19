@@ -1,4 +1,4 @@
-= spring-data-rest-multipart RESTful API Guide
+= spring-data-rest-multipart-file RESTful API Guide
 Version {project-version} u2waremanager@gmail.com;  
 :doctype: book
 :icons: font
@@ -8,7 +8,7 @@ Version {project-version} u2waremanager@gmail.com;
 :sectlinks:
 
 [[overview]]
-= spring-data-rest-multipart
+= spring-data-rest-multipart-file
 
 
 == Overview
