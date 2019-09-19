@@ -1,0 +1,6 @@
+|{{#tableCellContent}}
+ {{description}}    
+ifeval::["{{optional}}"=="false"]
+    [red]``*required*``
+endif::[]
+  {{/tableCellContent}}
