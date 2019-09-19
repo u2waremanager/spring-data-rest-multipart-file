@@ -1,6 +1,5 @@
 package org.springframework.data.rest.webmvc.multipart.local;
 
-import static org.slieb.throwables.FunctionWithThrowable.castFunctionWithThrowable;
 
 import java.io.InputStream;
 import java.nio.file.Files;
@@ -222,11 +221,15 @@ public class FileSystemService implements MultipartService, InitializingBean, Di
 				int idx = count.getAndAdd(1);
 				return idx >= stx && idx < end;
 				
-			}).map(castFunctionWithThrowable((p)->{
-				Multipart m = load(p);
-	        	m.setId(root.toUri().relativize(p.toUri()));
-				return m;
-			})).collect(Collectors.toList());
+			}).map((p)->{
+				try {
+					Multipart m = load(p);
+		        	m.setId(root.toUri().relativize(p.toUri()));
+					return m;
+				}catch(Exception ex) {
+					return null;
+				}
+			}).collect(Collectors.toList());
 			
 			return new PageImpl<>(list, pageable, count.get());
 			

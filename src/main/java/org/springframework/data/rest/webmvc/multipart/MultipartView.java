@@ -11,13 +11,13 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ObjectUtils;
+import org.springframework.util.StreamUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.servlet.View;
 
@@ -64,14 +64,20 @@ public class MultipartView implements View {
 			in = getInputStream(request, multipart.getSource());
 			out = response.getOutputStream();
 
-			IOUtils.copy(in, out);
+			StreamUtils.copy(in, out);
 
 		} catch (Exception e) {
 			logger.debug("", e);
 			response.sendError(HttpStatus.NOT_FOUND.value(), e.getMessage());
 		} finally {
-			IOUtils.closeQuietly(in);
-			IOUtils.closeQuietly(out);
+			try {
+				if(in != null) in.close();
+			}catch(Exception e) {
+			}
+			try {
+				if(out != null) out.close();
+			}catch(Exception e) {
+			}
 		}
 	}
 

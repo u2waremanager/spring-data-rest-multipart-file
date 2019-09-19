@@ -1,6 +1,5 @@
 package org.springframework.data.rest.webmvc.multipart.ftp;
 
-import static org.slieb.throwables.FunctionWithThrowable.castFunctionWithThrowable;
 import static org.springframework.web.util.UriComponentsBuilder.fromPath;
 import static org.springframework.web.util.UriComponentsBuilder.fromUri;
 
@@ -315,14 +314,14 @@ public class FtpSessionService extends FtpSessionProvider implements MultipartSe
 					int idx = count.getAndAdd(1);
 					return idx >= stx && idx < end;
 					
-				}).map(castFunctionWithThrowable((ftpFile)->{
+				}).map((ftpFile)->{
 
 					URI file = fromUri(target).path("/").path(ftpFile.getName()).build().toUri();
 					Multipart m = load(file, ftpFile);
 					m.setId(root.relativize(file));
 		        	return m;
 		        	
-				})).collect(Collectors.toList());
+				}).collect(Collectors.toList());
 				
 				return new PageImpl<>(list, pageable, count.get());
 			});
