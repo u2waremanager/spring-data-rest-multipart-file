@@ -21,12 +21,12 @@ public class MultipartServiceTests extends ApplicationTests{
 		});
 		
 		Long name = System.currentTimeMillis();
-		MockMultipartFile f =  new MockMultipartFile("file", "a.html", "text/plain", name.toString().getBytes());
+		MockMultipartFile f =  new MockMultipartFile("file", name+".html", "text/plain", name.toString().getBytes());
 		
 		$.MULTIPART("/multipart/default").F(f).P("random", "false").is2xx();//.and(docs.uploadFile("upload-step1"));
 		
-		$.GET("/multipart/default/a.html").is2xx();
-		$.GET("/multipart/default/a.html").P("flag", "preview").is2xx();
-		$.GET("/multipart/default/a.html").P("flag", "download").is2xx();
+		$.GET("/multipart/default/"+name+".html").is2xx();
+		$.GET("/multipart/default/"+name+".html").P("flag", "preview").is2xx();
+		$.GET("/multipart/default/"+name+".html").P("flag", "download").is2xx();
 	}	
 }
