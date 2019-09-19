@@ -1,0 +1,251 @@
+= spring-data-rest-multipart RESTful API Guide
+Version {project-version} u2waremanager@gmail.com;  
+:doctype: book
+:icons: font
+:source-highlighter: highlightjs
+:toc: left
+:toclevels: 2
+:sectlinks:
+
+[[overview]]
+= spring-data-rest-multipart
+
+
+== Overview
+
+[[overview-http-verbs]]
+=== HTTP verbs
+
+|===
+| Verb | Usage
+
+| `GET`
+| Used to retrieve a resource. . 
+
+| `POST`
+| Used to create a new resource. .
+
+| `PATCH`
+| Used to update an existing resource. .
+
+| `DELETE`
+| Used to delete an existing resource. .
+|===
+
+[[overview-http-status-codes]]
+
+|===
+| Status code | Usage
+
+| `200 OK`
+| The request completed successfully
+
+| `201 Created`
+| A new resource has been created successfully. The resource's URI is available from the response's
+`Location` header
+
+| `204 No Content`
+| An update(delete) to an existing resource has been applied successfully
+
+| `400 Bad Request`
+| The request was malformed. The response body will include an error providing further information
+
+| `401 Unauthorized`
+| Access Denied Error
+
+| `404 Not Found`
+| The requested resource did not exist
+
+| `500 Internal Server Error`
+| Internal Server Error
+|===
+
+
+[[overview-hypermedia]]
+=== Hypermedia
+
+RESTful Notes uses hypermedia and resources include links to other resources in their
+responses. Responses are in http://stateless.co/hal_specification.html[Hypertext Application
+from resource to resource.
+Language (HAL)] format. Links can be found beneath the `_links` key. Users of the API should
+not create URIs themselves, instead they should use the above-described links to navigate
+
+:sectnums:
+
+
+/////////////////////////////////////////////////////////////////////
+// 
+/////////////////////////////////////////////////////////////////////
+[[ui]]
+== Admin UI
+
+====
+[GET]  link:./multipart-ui[/multipart-ui] :: 
+====
+
+/////////////////////////////////////////////////////////////////////
+// 
+/////////////////////////////////////////////////////////////////////
+[[upload]]
+== Upload API
+
+====
+[POST] /multipart/{uuid...}:: 
+====
+
+
+[[upload-step1]]
+=== File 
+==== request
+include::{snippets}/upload-step1/http-request.adoc[]
+include::{snippets}/upload-step1/request-parts.adoc[]
+==== response
+include::{snippets}/upload-step1/http-response.adoc[]
+include::{snippets}/upload-step1/response-fields.adoc[]
+
+
+[[upload-step2]]
+=== Directory
+==== request
+include::{snippets}/upload-step2/http-request.adoc[]
+include::{snippets}/upload-step2/request-parameters.adoc[]
+==== response
+include::{snippets}/upload-step2/http-response.adoc[]
+include::{snippets}/upload-step2/response-fields.adoc[]
+
+
+[[upload-step3]]
+=== Child Directory
+==== request
+include::{snippets}/upload-step3/http-request.adoc[]
+include::{snippets}/upload-step3/request-parameters.adoc[]
+==== response
+include::{snippets}/upload-step3/http-response.adoc[]
+include::{snippets}/upload-step3/response-fields.adoc[]
+
+
+[[upload-step4]]
+=== Child File 
+==== request
+include::{snippets}/upload-step4/http-request.adoc[]
+include::{snippets}/upload-step4/request-parts.adoc[]
+==== response
+include::{snippets}/upload-step4/http-response.adoc[]
+include::{snippets}/upload-step4/response-fields.adoc[]
+
+
+
+
+
+/////////////////////////////////////////////////////////////////////
+// 
+/////////////////////////////////////////////////////////////////////
+[[read]]
+== Read API
+
+====
+[GET] /multipart/{uuid...}?flag=[download|preview|childs]:: 
+====
+
+[[read-step1]]
+=== Download
+==== request
+include::{snippets}/read-step1/http-request.adoc[]
+include::{snippets}/read-step1/request-parameters.adoc[]
+==== response
+include::{snippets}/read-step1/http-response.adoc[]
+
+
+[[read-step2]]
+=== Preview
+==== request
+include::{snippets}/read-step2/http-request.adoc[]
+include::{snippets}/read-step2/request-parameters.adoc[]
+==== response
+include::{snippets}/read-step2/http-response.adoc[]
+
+[[read-step3]]
+=== Childs
+==== request
+include::{snippets}/read-step3/http-request.adoc[]
+include::{snippets}/read-step3/request-parameters.adoc[]
+==== response
+include::{snippets}/read-step3/http-response.adoc[]
+include::{snippets}/read-step3/response-fields.adoc[]
+
+
+
+
+/////////////////////////////////////////////////////////////////////
+// 
+/////////////////////////////////////////////////////////////////////
+[[remove]]
+== Remove API
+====
+[DELETE] /multipart/{uuid...}:: 
+====
+
+[[remove-step1]]
+=== File
+==== request
+include::{snippets}/remove-step1/http-request.adoc[]
+==== response
+include::{snippets}/remove-step1/http-response.adoc[]
+
+
+[[remove-step2]]
+=== Directory
+==== request
+include::{snippets}/remove-step2/http-request.adoc[]
+==== response
+include::{snippets}/remove-step2/http-response.adoc[]
+
+
+
+/////////////////////////////////////////////////////////////////////
+// 
+/////////////////////////////////////////////////////////////////////
+[[update]]
+== Update API
+
+[[update-step1]]
+=== Rename
+====
+[PATCH] /multipart/{uuid...}:: 
+====
+==== request
+include::{snippets}/update-step1/http-request.adoc[]
+include::{snippets}/update-step1/request-fields.adoc[]
+==== response
+include::{snippets}/update-step1/http-response.adoc[]
+include::{snippets}/update-step1/response-fields.adoc[]
+
+[[update-step2]]
+=== Modify
+====
+[PUT] /multipart/{uuid...}:: 
+====
+==== request
+include::{snippets}/update-step2/http-request.adoc[]
+
+==== response
+include::{snippets}/update-step2/http-response.adoc[]
+include::{snippets}/update-step2/response-fields.adoc[]
+
+
+[[update-step3]]
+=== History
+====
+[GET] /multipart/{uuid...}?flag=history:: 
+====
+==== request
+include::{snippets}/update-step3/http-request.adoc[]
+include::{snippets}/update-step3/request-parameters.adoc[]
+
+==== response
+include::{snippets}/update-step3/http-response.adoc[]
+include::{snippets}/update-step3/response-fields.adoc[]
+
+
+
+

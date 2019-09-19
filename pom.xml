@@ -1,0 +1,227 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
+	<modelVersion>4.0.0</modelVersion>
+
+	<groupId>io.github.u2ware</groupId>
+	<artifactId>spring-data-rest-multipart-file</artifactId>
+	<version>2.1.5.1.RELEASE</version>
+	<packaging>jar</packaging>
+
+	<name>spring-data-rest-multipart-file</name>
+	<description>spring-data-rest-multipart-file</description>
+
+	<parent>
+		<groupId>org.springframework.boot</groupId>
+		<artifactId>spring-boot-starter-parent</artifactId>
+		<version>2.1.5.RELEASE</version>
+	</parent>
+
+	<properties>
+		<!-- https://github.com/spring-projects/spring-boot/issues/16846#issuecomment-492792506-->
+		<maven-jar-plugin.version>3.1.1</maven-jar-plugin.version>
+		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
+		<java.version>1.8</java.version>
+		<github.global.server>github</github.global.server>
+		<timestamp>${maven.build.timestamp}</timestamp>
+		<maven.build.timestamp.format>yyyy-MM-dd HH:mm:ss</maven.build.timestamp.format>
+	</properties>
+
+	<distributionManagement>
+		<repository>
+			<id>internal.repo</id>
+			<name>Temporary Staging Repository</name>
+			<url>file://${u2ware-mvn-repo}</url>
+		</repository>
+	</distributionManagement>
+
+	<dependencies>
+		<!-- 
+		#############################
+		# spring boot starter
+		##############################
+		 -->
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-data-rest</artifactId>
+			<scope>provided</scope>
+		</dependency>
+
+		<dependency>
+			<!-- https://mvnrepository.com/artifact/org.slieb/throwable-interfaces -->
+		    <groupId>org.slieb</groupId>
+		    <artifactId>throwable-interfaces</artifactId>
+		    <version>1.13</version>
+		</dependency>
+		<dependency>
+			<groupId>commons-io</groupId>
+			<artifactId>commons-io</artifactId>
+			<version>2.0.1</version>
+		</dependency>
+		<dependency>
+		    <groupId>net.java.dev.jna</groupId>
+		    <artifactId>jna-platform</artifactId>
+		</dependency>
+
+    		
+		<dependency>
+			<groupId>org.springframework.boot</groupId>
+			<artifactId>spring-boot-starter-test</artifactId>
+			<scope>test</scope>
+		</dependency>
+		<dependency>
+			<groupId>org.springframework.restdocs</groupId>
+			<artifactId>spring-restdocs-mockmvc</artifactId>
+			<scope>test</scope>
+		</dependency>
+
+	</dependencies>
+
+	<build>
+		<plugins>
+		
+			<!--  Docs -->
+			<plugin> 
+				<groupId>org.asciidoctor</groupId>
+				<artifactId>asciidoctor-maven-plugin</artifactId>
+				<version>1.5.3</version>
+				<executions>
+					<execution>
+						<id>generate-docs</id>
+						<phase>prepare-package</phase> 
+						<goals>
+							<goal>process-asciidoc</goal>
+						</goals>
+						<configuration>
+							<backend>html</backend>
+							<doctype>book</doctype>
+							<attributes>
+								<snippets>${project.build.directory}/generated-restdocs-snippets</snippets>
+								<project-version>${project.version}</project-version>
+							</attributes>
+							<sourceDirectory>${basedir}/src/test/resources/org/springframework/restdocs/guide</sourceDirectory>
+							<outputDirectory>${basedir}/src/main/resources/META-INF/resources/multipart-docs/</outputDirectory>
+						</configuration>
+					</execution>
+				</executions>
+				<dependencies>
+					<dependency>
+						<groupId>org.springframework.restdocs</groupId>
+						<artifactId>spring-restdocs-asciidoctor</artifactId>
+						<version>${spring-restdocs.version}</version>
+					</dependency>
+				</dependencies>
+			</plugin>
+		
+
+
+
+			<plugin>
+			    <groupId>com.github.eirslett</groupId>
+			    <artifactId>frontend-maven-plugin</artifactId>
+                <version>1.7.6</version>
+				<configuration>
+	                <nodeVersion>v10.16.0</nodeVersion>
+	                <npmVersion>6.9.0</npmVersion>
+	                <installDirectory>target</installDirectory>
+	                <workingDirectory>node</workingDirectory>
+			    </configuration>   
+    
+			    <executions>
+			        <execution>
+			            <id>install node and npm</id>
+			            <goals>
+			                <goal>install-node-and-npm</goal>
+			            </goals>
+                        <phase>prepare-package</phase>
+			        </execution>
+                    <execution>
+                        <id>npm install</id>
+                        <goals>
+                            <goal>npm</goal>
+                        </goals>
+                        <phase>prepare-package</phase>
+                        <configuration>
+                            <arguments>install</arguments>
+                        </configuration>
+                    </execution>
+					<execution>
+						<id>npm run build</id>
+						<goals>
+							<goal>npm</goal>
+						</goals>
+                        <phase>prepare-package</phase>
+						<configuration>
+							<arguments>run build</arguments>
+						</configuration>
+					</execution>
+			    </executions>
+			</plugin>
+
+
+
+
+		
+		
+			<!-- jre -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-compiler-plugin</artifactId>
+				<configuration>
+					<source>${java.version}</source>
+					<target>${java.version}</target>
+				</configuration>
+			</plugin>
+
+			<!-- build source.jar -->
+			<plugin>
+				<groupId>org.apache.maven.plugins</groupId>
+				<artifactId>maven-source-plugin</artifactId>
+				<executions>
+					<execution>
+						<id>attach-sources</id>
+						<goals>
+							<goal>jar</goal>
+						</goals>
+					</execution>
+				</executions>
+			</plugin>
+
+			<!-- github-deploy-maven-plugin maven.test.skip=true -->
+			<plugin>
+				<groupId>com.github.github</groupId>
+				<artifactId>site-maven-plugin</artifactId>
+				<version>0.12</version>
+				<configuration>
+					<message>${maven.build.timestamp}</message>
+					<noJekyll>true</noJekyll>
+					<outputDirectory>${u2ware-mvn-repo}</outputDirectory>
+					<branch>refs/heads/mvn-repo</branch>
+					<includes>
+						<include>**/*</include>
+					</includes>
+					<repositoryName>u2ware.github.com</repositoryName>
+					<repositoryOwner>u2ware</repositoryOwner>
+				</configuration>
+				<executions>
+					<execution>
+						<goals>
+							<goal>site</goal>
+						</goals>
+						<phase>deploy</phase>
+					</execution>
+				</executions>
+			</plugin>
+
+			<plugin>
+				<artifactId>maven-jar-plugin</artifactId>
+				<configuration>
+					<archive>
+						<addMavenDescriptor>false</addMavenDescriptor>
+					</archive>
+				</configuration>
+			</plugin>
+		</plugins>
+	</build>
+
+</project>

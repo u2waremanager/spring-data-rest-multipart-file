@@ -1,0 +1,11 @@
+[cols="2,1,4"]
+|===
+|Request Field|Required|Description
+
+{{#fields}}
+|{{#tableCellContent}}`{{path}}`{{/tableCellContent}}
+|{{#tableCellContent}}{{^optional}}true{{/optional}}{{/tableCellContent}}
+|{{#tableCellContent}}{{description}} {{#format}}{{.}}{{/format}}{{/tableCellContent}}
+
+{{/fields}}
+|===
