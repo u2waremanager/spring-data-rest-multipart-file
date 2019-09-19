@@ -75,7 +75,7 @@
         :clipped-left="$vuetify.breakpoint.lgAndUp" 
         :clipped-right="$vuetify.breakpoint.lgAndUp">
         <v-toolbar-side-icon @click.stop="drawer = !drawer"></v-toolbar-side-icon>
-        <v-toolbar-title>spring-data-rest-multipart-2.1.5.RELEASE</v-toolbar-title>
+        <v-toolbar-title>spring-data-rest-multipart-2.1.7.RELEASE</v-toolbar-title>
         <v-spacer></v-spacer>
         <v-toolbar-side-icon @click.stop="drawerRight = !drawerRight"></v-toolbar-side-icon>
     </v-toolbar>
@@ -192,12 +192,9 @@ export default {
         dialog: false,
         dialogText: null,
 
-        treeModel: [{
-            id : './multipart',
-            text : "Root Storage",
-            filename : 'Root Storage',
-            hasChildren : true
-        }],
+        treeModel: [
+
+        ],
        
         breadcrumbsModel :[
         ],
@@ -218,8 +215,46 @@ export default {
         ///////////////////////////////////////////////////////
         //
         ///////////////////////////////////////////////////////
+        onTreeRead(options){
+
+            var path = options.data.id;
+
+
+            if (path == undefined) {
+                this.$log.debug(this.$options.name, 'onTreeRead');
+                options.success(this.treeModel);
+            }else{
+
+                var url = path+"?flag=childs&sort=filename";
+                this.$log.debug(this.$options.name, 'onTreeRead', url);
+
+                this.$axios({
+                    method:  'get',
+                    url: url,
+                }).then((result) => {
+                    this.$log.debug(this.$options.name, 'onTreeRead', 'success');
+                    var data = result.data._embedded.multiparts;
+
+                    var items = [];
+                    for(var i=0; i < data.length; i++){
+                        if('text/directory' == data[i].contentType){
+                            data[i].text = data[i].filename;
+                            data[i].parentId = path;
+                            data[i].id = data[i]._links.self.href;
+                            data[i].hasChildren = true;
+                            items.push(data[i]);
+                        }
+                    }
+                    options.success(items);
+
+                }).catch((error) => {
+                    alert('multipart repository is not found. Please check your http url. onTreeRead() '+url);
+                    this.$log.debug(this.$options.name, 'onTreeRead', error);
+                });
+            } 
+        },
+
         onTreeSelect(ev) {
-            
             var treeview = this.$refs.treeview.kendoWidget();
 
             if(ev == null){
@@ -252,38 +287,6 @@ export default {
             dataItem.loaded(false);
         },
 
-        onTreeRead(options){
-
-            var path = options.data.id;
-            if (path == undefined) {
-                this.$log.debug(this.$options.name, 'onTreeRead root');
-                options.success(this.treeModel);
-            }else{
-
-                this.$axios({
-                    method:  'get',
-                    url: path+"?flag=childs&sort=filename",
-                }).then((result) => {
-                    this.$log.debug(this.$options.name, 'onTreeRead');
-                    var data = result.data._embedded.multiparts;
-
-                    var items = [];
-                    for(var i=0; i < data.length; i++){
-                        if('text/directory' == data[i].contentType){
-                            data[i].text = data[i].filename;
-                            data[i].parentId = path;
-                            data[i].id = data[i]._links.self.href;
-                            data[i].hasChildren = true;
-                            items.push(data[i]);
-                        }
-                    }
-                    options.success(items);
-
-                }).catch((error) => {
-                    this.$log.debug(this.$options.name, 'onTreeRead', error);
-                });
-            } 
-        },
 
         onTreeChange(){
             this.$log.debug(this.$options.name, 'onTreeChange');
@@ -323,13 +326,15 @@ export default {
         ///////////////////////////////////////////////////////
         onGridChange(newItem){
             var path = this.selectedDirectory.id;
+            var url = path+"?flag=childs&sort=filename";
 
+            this.$log.debug(this.$options.name, 'onGridChange', url);
             this.$axios({
                 method:  'get',
-                url: path+"?flag=childs&sort=filename",
+                url: url,
 
             }).then((result) => {
-                this.$log.debug(this.$options.name, 'onGridChange');
+                this.$log.debug(this.$options.name, 'onGridChange', 'success');
                 var data = result.data._embedded.multiparts;
 
 
@@ -355,6 +360,7 @@ export default {
                 }
 
             }).catch((error) => {
+                alert('Multipart repository is not found. Please check your http url. onGridChange() '+url);
                 this.$log.debug(this.$options.name, 'onGridChange', error);
             });
         },
@@ -363,28 +369,38 @@ export default {
 
             var uid = ev.sender.select();
             this.selectedFile = ev.sender.dataItem(uid);
-            this.$log.debug(this.$options.name, 'onGridSelect', this.selectedFile);
 
             if("text/directory" != this.selectedFile.contentType){
                 this.drawerRight = true;
                 
-                var path =  this.selectedFile.id;
+                var url =  this.selectedFile.id;
+                
+                this.$log.debug(this.$options.name, 'onGridSelect', url);
                 this.$axios({
                     method:  'get',
-                    url: path+"?flag=history&sort=lastModified,desc",
+                    url: url,
+                    // url: path+"?flag=history&sort=lastModified,desc",
 
                 }).then((result) => {
-                    var data = result.data._embedded.multiparts;
+                    this.$log.debug(this.$options.name, 'onGridSelect', 'success');  
+
+                    var data = result.data;
+                    data.moment = data.lastModified;
 
                     this.cardModel.splice(0, this.cardModel.length);
-                    for(var i=0; i < data.length; i++){
-                        data[i].moment = data[i].lastModified;
-                        // data[i].moment = this.$moment(data[i].lastModified).format("YYYY-MM-DD HH:mm:ss");
-                        // data[i].moment = this.$moment(data[i].lastModified).fromNow();
-                        this.cardModel.push(data[i]);
-                    }
+                    this.cardModel.push(data);
+
+                    // var data = result.data._embedded.multiparts;
+                    // this.cardModel.splice(0, this.cardModel.length);
+                    // for(var i=0; i < data.length; i++){
+                    //     data[i].moment = data[i].lastModified;
+                    //     // data[i].moment = this.$moment(data[i].lastModified).format("YYYY-MM-DD HH:mm:ss");
+                    //     // data[i].moment = this.$moment(data[i].lastModified).fromNow();
+                    //     this.cardModel.push(data[i]);
+                    // }
 
                 }).catch((error) => {
+                    alert('Multipart repository is not found. Please check your http url. onGridSelect() '+url);
                     this.$log.debug(this.$options.name, 'onGridSelect', error);
                 });
 
@@ -425,20 +441,24 @@ export default {
         },
 
         upload(formData){
-            //this.$log.debug(this.$options.name, 'upload', formData);
+
+
+            var url = this.selectedDirectory.id;
+            this.$log.debug(this.$options.name, 'upload', url);
 
             this.$axios({
                 method:  'post',
                 headers: {'Content-Type': 'multipart/form-data'},
-                url: this.selectedDirectory.id,
+                url: url,
                 data: formData,
 
             }).then((response) => {
-                this.$log.debug(this.$options.name, 'upload', response);
+                this.$log.debug(this.$options.name, 'upload', 'success');
                 this.onTreeChange();
                 this.onGridChange(response.data);
 
             }).catch((error) => {
+                alert('Multipart repository is not found. Please check your http url. upload() '+url);
                 this.$log.debug(this.$options.name, 'upload', error);
             })
         },
@@ -446,22 +466,25 @@ export default {
         remove(){
             if(this.selectedFile == null) return;
             
+            var url = this.selectedFile.id;
+            this.$log.debug(this.$options.name, 'remove', url);
+
             this.$axios({
                 method:  'delete',
-                url: this.selectedFile.id
+                url: url
 
-            }).then((response) => {
-                this.$log.debug(this.$options.name, 'remove', response);
+            }).then(() => {
+                this.$log.debug(this.$options.name, 'remove', 'success');
                 this.onTreeChange();
                 this.onGridChange();
 
             }).catch((error) => {
+                alert('Multipart repository is not found. Please check your http url. remove() '+url);
                 this.$log.debug(this.$options.name, 'remove', error);
             })
         },
 
         download(href, download) {
-            //alert('aaa');
             this.$log.debug(this.$options.name, "download", href, download);
 
             const a = document.createElement('a');
@@ -478,9 +501,16 @@ export default {
     },
     created: function() {
         //this.$log.debug(this.$options.name, 'created');
+        this.treeModel = [{
+            id : '/multipart/'+this.$route.params.backend,
+            //id : 'http://localhost:19085/multipart/'+this.$route.params.backend,
+            text : "Root Storage",
+            filename : 'Root Storage',
+            hasChildren : true
+        }];
     },
     mounted: function() {
-        this.$log.debug(this.$options.name, 'mounted');
+        // this.$log.debug(this.$options.name, 'mounted');
         this.onTreeSelect();
     },
     updated: function() {

@@ -1,16 +1,11 @@
-package org.springframework.data.rest.webmvc.multipart.environment;
+package org.springframework.data.rest.webmvc.multipart.local;
 
 
 import java.io.IOException;
-import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
-import java.nio.file.SimpleFileVisitor;
-import java.nio.file.attribute.BasicFileAttributes;
 import java.text.Normalizer;
 import java.text.Normalizer.Form;
-import java.util.stream.Stream;
-import java.util.stream.Stream.Builder;
 
 import org.springframework.util.ClassUtils;
 
@@ -75,58 +70,4 @@ public class FileSystemUtils {
 		}
 	}
 	
-	
-	public static boolean deleteRecursively(Path path) throws IOException {
-		return org.springframework.util.FileSystemUtils.deleteRecursively(path);
-	}
-
-	
-	public static Stream<Path> listWithAttribute(Path parent, String key, String value) throws IOException {
-		return Files.list(parent).filter((p) -> {
-			
-			String name = null;
-			try {
-				name = FileSystemUtils.getAttribute(p, key).toUpperCase();
-			}catch(Exception e) {
-				name = p.getFileName().toString().toUpperCase();
-			}
-			return name.contains(value.toUpperCase());
-		});
-	}
-	
-	public static Stream<Path> walkFileTreeWithAttribute(Path parent, String key, String value) throws IOException {
-		
-		Builder<Path> builder = Stream.builder();
-		Files.walkFileTree(parent, new SimpleFileVisitor<Path>() {
-			@Override
-			public FileVisitResult visitFile(Path p, BasicFileAttributes attrs) throws IOException {
-				
-				String name = null;
-				try {
-					name = FileSystemUtils.getAttribute(p, key).toUpperCase();
-				}catch(Exception e) {
-					name = p.getFileName().toString().toUpperCase();
-				}
-				
-				if(name.contains(value.toUpperCase())) 
-					builder.add(p);
-				return FileVisitResult.CONTINUE;
-			}
-			@Override
-			public FileVisitResult postVisitDirectory(Path p, IOException exc) throws IOException {
-				
-				String name = null;
-				try {
-					name = FileSystemUtils.getAttribute(p, key).toUpperCase();
-				}catch(Exception e) {
-					name = p.getFileName().toString().toUpperCase();
-				}
-				
-				if(name.contains(value.toUpperCase())) 
-					builder.add(p);
-				return FileVisitResult.CONTINUE;
-			}
-		});
-		return builder.build();
-	}
 }

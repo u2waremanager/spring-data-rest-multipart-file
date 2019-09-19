@@ -1,26 +1,29 @@
 package org.springframework.data.rest.webmvc.multipart;
 
 import java.io.IOException;
-import java.net.URI;
 import java.util.Optional;
+import java.util.UUID;
 
 import javax.servlet.http.HttpServletRequest;
 
+import org.apache.commons.logging.Log;
+import org.apache.commons.logging.LogFactory;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.context.ApplicationContext;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.BaseUri;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
-import org.springframework.data.rest.webmvc.support.BaseUriLinkBuilder;
 import org.springframework.data.web.PagedResourcesAssembler;
-import org.springframework.hateoas.Link;
 import org.springframework.hateoas.Resource;
 import org.springframework.hateoas.ResourceAssembler;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.AntPathMatcher;
+import org.springframework.util.MultiValueMap;
 import org.springframework.web.HttpRequestMethodNotSupportedException;
+import org.springframework.web.bind.annotation.PathVariable;
 import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
@@ -35,121 +38,210 @@ import org.springframework.web.servlet.View;
 @BasePathAwareController
 public class MultipartController {
 
-	//protected Log logger = LogFactory.getLog(getClass());
+	protected Log logger = LogFactory.getLog(getClass());
 	
-	private static final String MULTIPART = "/multipart";
-	private static final String MULTIPART_FILE    = MULTIPART+"/**";	
+	public final String MULTIPART = "multipart";
 	
-	protected @Autowired MultipartRepository repository;
+	@RequestMapping("/multipart-ui/{beanName:[^\\\\\\\\.]*}")
+	public String html5Forwarding(@PathVariable String beanName) {
+		return "forward:/multipart-ui/index.html";
+	}
 	
-	protected @Autowired BaseUri baseUri;
-	protected @Autowired PagedResourcesAssembler<Multipart> resourcesAssembler;
-	protected ResourceAssembler<Multipart, Resource<Multipart>> resourceAssembler = new ResourceAssembler<Multipart, Resource<Multipart>>(){
-		public Resource<Multipart> toResource(Multipart entity) {
-			URI uri = baseUri.getUriComponentsBuilder().path(MULTIPART).build().toUri();
-			Link link = BaseUriLinkBuilder.create(uri).slash(entity.getId()).withSelfRel();
-			return new Resource<Multipart>(entity, link);
-		}
-	};
-    
-	//upload
-	@RequestMapping(value=MULTIPART_FILE, method=RequestMethod.POST, consumes="multipart/form-data") 
+	@RequestMapping("/multipart-docs")
+	public String html5Forwarding() {
+		return "forward:/multipart-docs/index.html";
+	}
+	
+	//upload & mkdir
+	@RequestMapping(value="/multipart/{beanName}/**", method=RequestMethod.POST, consumes="multipart/form-data") 
 	public @ResponseBody ResponseEntity<?> create(
+			@PathVariable String beanName,
 			@RequestParam(value="file", required=false) MultipartFile file,
-			@RequestParam(value="directory", required=false) String directory) throws ResourceNotFoundException, HttpRequestMethodNotSupportedException{
+			@RequestParam(value="directory", required=false) String directory,
+			@RequestParam(value="random", required=false, defaultValue = "true") Boolean random) throws ResourceNotFoundException, HttpRequestMethodNotSupportedException{
 		
-		String path = getCurrentRequestWildcardMappingValue();
-        
-		Optional<Multipart> multipart = (file != null) ? repository.create(path, file) : repository.create(path, directory);
-		return toResource(multipart);
-	}
-
-	
-	
-	//update
-	@RequestMapping(value=MULTIPART_FILE, method = RequestMethod.PUT)
-	public @ResponseBody ResponseEntity<?> update(HttpServletRequest request) throws ResourceNotFoundException, HttpRequestMethodNotSupportedException, IOException {
-		String path = getCurrentRequestWildcardMappingValue();
-
-		Optional<Multipart> multipart = repository.update(path, request.getInputStream());
-		return toResource(multipart);
-	}
-
-	//update - rename
-	@RequestMapping(value=MULTIPART_FILE, method = RequestMethod.PATCH)
-	public @ResponseBody ResponseEntity<?> update(@RequestBody Multipart request) throws ResourceNotFoundException, HttpRequestMethodNotSupportedException {
+		MultipartService service = resolveMultipartService(beanName);
+		ResourceAssembler<Multipart, Resource<Multipart>> resourceAssembler = resolveResourceAssembler(beanName, service);
 		String path = getCurrentRequestWildcardMappingValue();
 		
-		Optional<Multipart> multipart = repository.update(path, request.getFilename());
-		return toResource(multipart);
+		Optional<Multipart> multipart = (file != null) 
+				? service.upload(path, random ? new UploadFile(file, UUID.randomUUID().toString()) : file) 
+				: service.mkdir(path,  random ? new UploadDirectory(directory, UUID.randomUUID().toString()) : new UploadDirectory(directory));
+		
+		return toResource(multipart, resourceAssembler);
 	}
+
+	//download
+	@RequestMapping(value="/multipart/{beanName}/**", method= RequestMethod.GET, params = {"flag=preview"}) 
+	public View preview(@PathVariable String beanName) throws ResourceNotFoundException, HttpRequestMethodNotSupportedException {
+		return download(beanName, false);
+	}
+
+	@RequestMapping(value="/multipart/{beanName}/**", method= RequestMethod.GET, params = {"flag=download"}) 
+	public View download(@PathVariable String beanName) throws ResourceNotFoundException, HttpRequestMethodNotSupportedException {
+		return download(beanName, true);
+    }
+    
+	private View download(String beanName, Boolean download) throws ResourceNotFoundException, HttpRequestMethodNotSupportedException {
+		MultipartService service = resolveMultipartService(beanName);
+		String path = getCurrentRequestWildcardMappingValue();
+		
+		Optional<Multipart> multipart = service.download(path);
+		return multipart.map((content)->{
+			return new MultipartView(content, download);
+		}).orElseThrow(() -> new ResourceNotFoundException());
+    }
 	
 	//delete
-	@RequestMapping(value=MULTIPART_FILE, method= RequestMethod.DELETE) 
-	public @ResponseBody ResponseEntity<Object> delete() throws ResourceNotFoundException, HttpRequestMethodNotSupportedException {
+	@RequestMapping(value="/multipart/{beanName}/**", method= RequestMethod.DELETE) 
+	public @ResponseBody ResponseEntity<Object> delete(
+			@PathVariable String beanName) throws ResourceNotFoundException, HttpRequestMethodNotSupportedException {
+		MultipartService service = resolveMultipartService(beanName);
 		String path = getCurrentRequestWildcardMappingValue();
-		repository.delete(path);
+		
+		service.delete(path);
 		return new ResponseEntity<Object>(HttpStatus.OK);
 	}
 	
-	
-	//read
-	@RequestMapping(value=MULTIPART_FILE, method= RequestMethod.GET) 
-	public @ResponseBody ResponseEntity<?> read() throws ResourceNotFoundException, HttpRequestMethodNotSupportedException {
+	//attrs
+	@RequestMapping(value="/multipart/{beanName}/**", method= RequestMethod.GET) 
+	public @ResponseBody ResponseEntity<?> attrs(@PathVariable String beanName) throws ResourceNotFoundException, HttpRequestMethodNotSupportedException {
+		MultipartService service = resolveMultipartService(beanName);
+		ResourceAssembler<Multipart, Resource<Multipart>> resourceAssembler = resolveResourceAssembler(beanName, service);
 		String path = getCurrentRequestWildcardMappingValue();
 		
-		Optional<Multipart> multipart = repository.read(path);
-		return toResource(multipart);
+		Optional<Multipart> multipart = service.attrs(path);
+		return toResource(multipart, resourceAssembler);
 	}
 
-	@RequestMapping(value=MULTIPART_FILE, method= RequestMethod.GET, params = {"flag=preview"}) 
-	public View preview() throws ResourceNotFoundException, HttpRequestMethodNotSupportedException {
-		return download(false);
-	}
-
-	@RequestMapping(value=MULTIPART_FILE, method= RequestMethod.GET, params = {"flag=download"}) 
-	public View download() throws ResourceNotFoundException, HttpRequestMethodNotSupportedException {
-		return download(true);
-    }
-    
-	private View download(Boolean download) throws ResourceNotFoundException, HttpRequestMethodNotSupportedException {
+	//rename
+	@RequestMapping(value="/multipart/{beanName}/**", method = RequestMethod.PATCH)
+	public @ResponseBody ResponseEntity<?> rename(
+			@PathVariable String beanName,
+			@RequestBody Multipart request) throws ResourceNotFoundException, HttpRequestMethodNotSupportedException {
+		MultipartService service = resolveMultipartService(beanName);
+		ResourceAssembler<Multipart, Resource<Multipart>> resourceAssembler = resolveResourceAssembler(beanName, service);
 		String path = getCurrentRequestWildcardMappingValue();
-		Optional<Multipart> content = repository.read(path);
-		return new MultipartView(content.get(), download);
-    }
+		
+		Optional<Multipart> multipart = service.rename(path, request.getFilename());
+		return toResource(multipart, resourceAssembler);
+	}
+	
+	
+	//version
+	@RequestMapping(value="/multipart/{beanName}/**", method = RequestMethod.PUT)
+	public @ResponseBody ResponseEntity<?> version(
+			@PathVariable String beanName,
+			HttpServletRequest request) throws ResourceNotFoundException, HttpRequestMethodNotSupportedException, IOException {
+		MultipartService service = resolveMultipartService(beanName);
+		ResourceAssembler<Multipart, Resource<Multipart>> resourceAssembler = resolveResourceAssembler(beanName, service);
+		String path = getCurrentRequestWildcardMappingValue();
 
+		Optional<Multipart> multipart = service.version(path, request.getInputStream());
+		return toResource(multipart, resourceAssembler);
+	}
+	
+	
+	
+	//versions
+	@RequestMapping(value="/multipart/{beanName}/**", method= RequestMethod.GET, params = {"flag=version"}) 
+	public @ResponseBody ResponseEntity<?> versions(
+			@PathVariable String beanName,
+			Pageable pageable) throws ResourceNotFoundException, HttpRequestMethodNotSupportedException {
+		MultipartService service = resolveMultipartService(beanName);
+		ResourceAssembler<Multipart, Resource<Multipart>> resourceAssembler = resolveResourceAssembler(beanName, service);
+		String path = getCurrentRequestWildcardMappingValue();
+		
+		Page<Multipart> multiparts = service.versions(path, pageable);
+		return toResources(multiparts, resourcesAssembler, resourceAssembler);
+	}
+	
 
 	//search
-	@RequestMapping(value=MULTIPART_FILE, method= RequestMethod.GET, params = {"flag=history"}) 
-	public @ResponseBody ResponseEntity<?> history(
+	@RequestMapping(value="/multipart/{beanName}/**", method= RequestMethod.GET, params = {"flag=search"}) 
+	public @ResponseBody ResponseEntity<?> search(
+			@PathVariable String beanName,
+			@RequestParam MultiValueMap<String,Object> params,
 			Pageable pageable) throws ResourceNotFoundException, HttpRequestMethodNotSupportedException {
-		
+		MultipartService service = resolveMultipartService(beanName);
+		ResourceAssembler<Multipart, Resource<Multipart>> resourceAssembler = resolveResourceAssembler(beanName, service);
 		String path = getCurrentRequestWildcardMappingValue();
 		
-		Page<Multipart> multiparts = repository.history(path, pageable);
-		return toResources(multiparts);
+		Page<Multipart> multiparts = service.search(path, pageable, params);
+		return toResources(multiparts, resourcesAssembler, resourceAssembler);
 	}
 	
-	@RequestMapping(value=MULTIPART_FILE, method= RequestMethod.GET, params = {"flag=childs"}) 
+	
+
+	//childs
+	@RequestMapping(value="/multipart/{beanName}/**", method= RequestMethod.GET, params = {"flag=childs"}) 
 	public @ResponseBody ResponseEntity<?> childs(
+			@PathVariable String beanName,
 			Pageable pageable) throws ResourceNotFoundException, HttpRequestMethodNotSupportedException {
-		
+		MultipartService service = resolveMultipartService(beanName);
+		ResourceAssembler<Multipart, Resource<Multipart>> resourceAssembler = resolveResourceAssembler(beanName, service);
 		String path = getCurrentRequestWildcardMappingValue();
-		Page<Multipart> multiparts = repository.childs(path, pageable);
-		return toResources(multiparts);
+		
+		Page<Multipart> multiparts = service.childs(path, pageable);
+		return toResources(multiparts, resourcesAssembler, resourceAssembler);
 	}
 
 
-
-//	 @RequestMapping(value=MULTIPART, method= RequestMethod.GET, params = {"flag=search"}) 
-//	 public @ResponseBody ResponseEntity<?> search(
-//	 		@RequestParam(value="name", required = false) String name,
-//	 		Pageable pageable) throws ResourceNotFoundException, HttpRequestMethodNotSupportedException {
-//		
-//	 	Page<Multipart> multiparts = repository.search(path, pageable);
-//	 	return toResources(multiparts);
-//	 }
+	protected @Autowired BaseUri baseUri;
+	protected @Autowired ApplicationContext context;
+	protected @Autowired PagedResourcesAssembler<Multipart> resourcesAssembler;
 	
+	protected String resolveBaseUri(String beanName) {
+		return baseUri.getUriComponentsBuilder()
+				.pathSegment("multipart")
+				.pathSegment(beanName)
+				.toUriString();
+	}
+	
+	protected MultipartService resolveMultipartService(String beanName) {
+		try {
+			return context.getBean(beanName, MultipartService.class);
+		}catch(Exception e) {
+			throw new ResourceNotFoundException(beanName);
+		}
+	}
+	
+	protected ResourceAssembler<Multipart, Resource<Multipart>> resolveResourceAssembler(String beanName, MultipartService service) {
+		return new ResourceAssembler<Multipart, Resource<Multipart>>() {
+			public Resource<Multipart> toResource(Multipart entity) {
+				return service.toResource(entity, resolveBaseUri(beanName));
+			}
+		};
+	}
+	
+	protected ResponseEntity<?> toResources(Page<Multipart> page, PagedResourcesAssembler<Multipart> resourcesAssembler, ResourceAssembler<Multipart, Resource<Multipart>> resourceAssembler){
+		Object content = null;
+		if(! page.iterator().hasNext()) {
+			content = resourcesAssembler.toEmptyResource(page, Multipart.class);
+		}else {
+			content = resourcesAssembler.toResource(page, resourceAssembler);
+		}
+		return new ResponseEntity<Object>(content, HttpStatus.OK);
+	}
+
+	protected ResponseEntity<?> toResource(Optional<Multipart> multipart, ResourceAssembler<Multipart, Resource<Multipart>> resourceAssembler){
+		return multipart.map((entity)->{
+			return new ResponseEntity<Resource<Multipart>>(resourceAssembler.toResource(entity), HttpStatus.OK);
+		}).orElseThrow(() -> new ResourceNotFoundException());
+	}
+
+	protected String getCurrentRequestWildcardMappingValue(){
+		ServletRequestAttributes sra = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
+		HttpServletRequest request = sra.getRequest();
+		AntPathMatcher apm = new AntPathMatcher();
+		String pattern = (String) request.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE);
+		
+		String path = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);
+		String wildcard = apm.extractPathWithinPattern(pattern, path);
+		
+		return wildcard;
+	}
+
 	
 //	private URI getCurrentRequestUri(){
 //		return ServletUriComponentsBuilder.fromCurrentRequest().build().toUri();
@@ -157,33 +249,20 @@ public class MultipartController {
 //
 //	private String getCurrentRequestUri(URI uri){
 //		return getCurrentRequestUri().relativize(uri).toString(); 
-//	}
+//	}	
 	
-	private String getCurrentRequestWildcardMappingValue(){
-		ServletRequestAttributes sra = (ServletRequestAttributes) RequestContextHolder.getRequestAttributes();
-		HttpServletRequest request = sra.getRequest();
-		AntPathMatcher apm = new AntPathMatcher();
-		String pattern = (String) request.getAttribute(HandlerMapping.BEST_MATCHING_PATTERN_ATTRIBUTE);
-		String path = (String) request.getAttribute(HandlerMapping.PATH_WITHIN_HANDLER_MAPPING_ATTRIBUTE);
-		String wildcard = apm.extractPathWithinPattern(pattern, path);
-		return wildcard;
-	}	
-
-	protected ResponseEntity<?> toResources(Page<Multipart> multiparts){
-		Object content = null;
-		if(multiparts.getContent().size() == 0) {
-			content = resourcesAssembler.toEmptyResource(multiparts, Multipart.class);
-		}else {
-			content = resourcesAssembler.toResource(multiparts, resourceAssembler);
-		}
-		return new ResponseEntity<Object>(content, HttpStatus.OK);
-	}
+//	private static final String MULTIPART = "/multipart";
+//	private static final String MULTIPART_FILE    = MULTIPART+"/**";	
 	
-	protected ResponseEntity<?> toResource(Optional<Multipart> multipart){
-		return multipart.map((it)->{
-			Object content = resourceAssembler.toResource(it);
-			return new ResponseEntity<Object>(content, HttpStatus.OK);
-		}).orElseThrow(() -> new ResourceNotFoundException());
-	}
-
+//	protected @Autowired MultipartRepository repository;
+//	
+//	protected @Autowired BaseUri baseUri;
+//	
+//	protected ResourceAssembler<Multipart, Resource<Multipart>> resourceAssembler = new ResourceAssembler<Multipart, Resource<Multipart>>(){
+//		public Resource<Multipart> toResource(Multipart entity) {
+//			URI uri = baseUri.getUriComponentsBuilder().path(MULTIPART).build().toUri();
+//			Link link = BaseUriLinkBuilder.create(uri).slash(entity.getId()).withSelfRel();
+//			return new Resource<Multipart>(entity, link);
+//		}
+//	};
 }

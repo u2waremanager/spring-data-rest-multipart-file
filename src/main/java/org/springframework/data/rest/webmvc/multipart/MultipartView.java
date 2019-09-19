@@ -47,7 +47,7 @@ public class MultipartView implements View {
 		try {
 			String filename = getFilename(request, multipart.getFilename());
 
-			if (isDownload) {
+			if (isDownload || getContentType().contains("octet-stream")) {
 				response.setContentType("application/octet-stream;charset=UTF-8");
 				response.setHeader("Content-Disposition", "attachment; filename=" + filename);
 				response.setHeader("Content-Transfer-Encoding", "binary");
@@ -82,6 +82,8 @@ public class MultipartView implements View {
 			return Files.newInputStream((Path)source);
 		}else if(ClassUtils.isAssignableValue(Resource.class, source)) {
 			return ((Resource)source).getInputStream();
+		}else if(ClassUtils.isAssignableValue(InputStream.class, source)) {
+			return (InputStream)source;
 		}else {
 			throw new Exception();
 		}

@@ -1,4 +1,4 @@
-package org.springframework.data.rest.webmvc.multipart.test;
+package org.springframework.data.rest.webmvc.multipart;
 
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.document;
 import static org.springframework.restdocs.operation.preprocess.Preprocessors.preprocessRequest;
@@ -22,13 +22,13 @@ import org.springframework.test.web.servlet.MvcResult;
 import org.springframework.test.web.servlet.ResultHandler;
 
 
-public class MultipartDocs implements ResultHandler{
+public class ApplicationDocs implements ResultHandler{
 
 	
 	//private String identifier;
 	private RestDocumentationResultHandler handler;
 	
-	public MultipartDocs(String identifier) {
+	public ApplicationDocs(String identifier) {
 		//this.identifier = identifier;
 		this.handler = document(identifier
 					, preprocessRequest(prettyPrint())

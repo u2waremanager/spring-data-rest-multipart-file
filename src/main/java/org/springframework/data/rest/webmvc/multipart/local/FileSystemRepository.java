@@ -1,12 +1,16 @@
-package org.springframework.data.rest.webmvc.multipart.environment;
+package org.springframework.data.rest.webmvc.multipart.local;
 
 import static org.slieb.throwables.FunctionWithThrowable.castFunctionWithThrowable;
 
+import java.io.IOException;
 import java.io.InputStream;
+import java.nio.file.FileVisitResult;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.nio.file.Paths;
+import java.nio.file.SimpleFileVisitor;
 import java.nio.file.StandardCopyOption;
+import java.nio.file.attribute.BasicFileAttributes;
 import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.List;
@@ -15,67 +19,80 @@ import java.util.UUID;
 import java.util.function.Predicate;
 import java.util.stream.Collectors;
 import java.util.stream.Stream;
+import java.util.stream.Stream.Builder;
 
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
+import org.springframework.beans.factory.InitializingBean;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.rest.webmvc.multipart.Multipart;
-import org.springframework.data.rest.webmvc.multipart.MultipartRepository;
+import org.springframework.data.rest.webmvc.multipart.MultipartService;
+import org.springframework.hateoas.Link;
+import org.springframework.hateoas.Resource;
+import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
+import org.springframework.web.util.UriComponentsBuilder;
 
-public class FileSystemMultipartRepository implements MultipartRepository{
+public abstract class FileSystemRepository implements MultipartService, InitializingBean{
 
 	protected Log logger = LogFactory.getLog(getClass());
 	
 	private Path root;
 	
-	
-	public FileSystemMultipartRepository(FileSystemProperties properties) throws Exception {
-		this.root = Paths.get(properties.getLocation());
-		logger.info("ROOT: " + properties.getLocation());
+	protected abstract String getLocation();
+
+	@Override
+	public void afterPropertiesSet() throws Exception {
+		this.root = Paths.get(getLocation());
+		logger.info("ROOT: " + getLocation());
 		if (!Files.exists(this.root)) {
 			Files.createDirectories(this.root);
 			logger.info("ROOT: created");
 		}
 	}
+
 	
 	@Override
-	public Optional<Multipart> create(String path, MultipartFile src) {
+	public Optional<Multipart> upload(String path, MultipartFile file){
+		
 		try {
 			Path parent = root.resolve(path);
 			if(! Files.isDirectory(parent)) 
 				throw new Exception(path+" is not found.");
 			
 			Path target = parent.resolve(UUID.randomUUID().toString());
-			Files.copy(src.getInputStream(), target);
-			FileSystemUtils.setAttribute(target, "filename", src.getOriginalFilename());
-			FileSystemUtils.setAttribute(target, "contentType", src.getContentType());
+			Files.copy(file.getInputStream(), target);
+			FileSystemUtils.setAttribute(target, "filename", file.getOriginalFilename());
+			FileSystemUtils.setAttribute(target, "contentType", file.getContentType());
 			FileSystemUtils.setAttribute(target, "version", "false");
-            
+			
 
+			logger.info("File has been successfully transferred to: "+target);
+			
 			return Optional.of(multipart(target));
 		}catch(Exception e) {
+			e.printStackTrace();
 			return Optional.empty();
 		}
 	}
 	
 	@Override
-	public Optional<Multipart> create(String path, String directory) {
+	public Optional<Multipart> mkdir(String path, MultipartFile directory) {
 		try {
 			Path parent = root.resolve(path);
-			if(! Files.isDirectory(parent) || StringUtils.isEmpty(directory)) 
+			if(! Files.isDirectory(parent)) 
 				throw new Exception(path+" is not found.");
 	
 			Path target = parent.resolve(UUID.randomUUID().toString());
 			Files.createDirectories(target);
-			FileSystemUtils.setAttribute(target, "filename", directory);
-			FileSystemUtils.setAttribute(target, "contentType", "text/directory");
+			FileSystemUtils.setAttribute(target, "filename", directory.getOriginalFilename());
+			FileSystemUtils.setAttribute(target, "contentType", directory.getContentType());
 			FileSystemUtils.setAttribute(target, "version", "false");
-
+			
 			return Optional.of(multipart(target));
 		}catch(Exception e) {
 			return Optional.empty();
@@ -83,7 +100,7 @@ public class FileSystemMultipartRepository implements MultipartRepository{
 	}
 
 	@Override
-	public Optional<Multipart> read(String path)  {
+	public Optional<Multipart> attrs(String path)  {
 		try {
 			Path target = root.resolve(path);
 			if(! Files.exists(target) || StringUtils.isEmpty(path)) 
@@ -94,9 +111,15 @@ public class FileSystemMultipartRepository implements MultipartRepository{
 			return Optional.empty();
 		}
 	}
+
+	@Override
+	public Optional<Multipart> download(String path) {
+		return attrs(path);
+	}
+	
 	
 	@Override
-	public Optional<Multipart> update(String path, String filename) {
+	public Optional<Multipart> rename(String path, String filename) {
 		try {
 			Path target = root.resolve(path);
 			if(! Files.exists(target))
@@ -111,7 +134,7 @@ public class FileSystemMultipartRepository implements MultipartRepository{
 	
 
 	@Override
-	public Optional<Multipart> update(String path, InputStream src) {
+	public Optional<Multipart> version(String path, InputStream src) {
 		try {
 			Path target = root.resolve(path);
 			if(! Files.isRegularFile(target) || StringUtils.isEmpty(path)) 
@@ -152,11 +175,40 @@ public class FileSystemMultipartRepository implements MultipartRepository{
 			if(! Files.exists(orgin)) 
                 throw new Exception(path+" is not found.");
                 
-            FileSystemUtils.deleteRecursively(orgin);
+			org.springframework.util.FileSystemUtils.deleteRecursively(orgin);
 
 			return Optional.empty();
 		}catch(Exception e) {
 			return Optional.empty();
+		}
+	}
+
+	
+
+	@Override
+	public Page<Multipart> versions(String path, Pageable pageable)  {
+
+		try {
+			Path orgin = root.resolve(path);
+			if(! Files.isRegularFile(orgin) || StringUtils.isEmpty(path)) 
+				throw new Exception(path+" is not found.");
+			
+			String orginId = orgin.getParent().relativize(orgin).toString();
+			Stream<Path> paths = listWithAttribute(orgin.getParent(), "xxxxx", orginId);
+			return multipart(paths, pageable, true);
+		}catch(Exception e) {
+			return new PageImpl<Multipart>(new ArrayList<Multipart>());
+		}
+	}
+
+	
+	@Override
+	public Page<Multipart> search(String name, Pageable pageable, MultiValueMap<String,Object> params) {
+		try {
+			Stream<Path> paths = walkFileTreeWithAttribute(root, "filename", name);
+			return multipart(paths, pageable, false);
+		}catch(Exception e) {
+			return new PageImpl<Multipart>(new ArrayList<Multipart>());
 		}
 	}
 
@@ -177,39 +229,12 @@ public class FileSystemMultipartRepository implements MultipartRepository{
 			return new PageImpl<Multipart>(new ArrayList<Multipart>());
 		}
 	}
-
-	@Override
-	public Page<Multipart> history(String path, Pageable pageable)  {
-
-		try {
-			Path orgin = root.resolve(path);
-			if(! Files.isRegularFile(orgin) || StringUtils.isEmpty(path)) 
-				throw new Exception(path+" is not found.");
-			
-			String orginId = orgin.getParent().relativize(orgin).toString();
-			Stream<Path> paths = FileSystemUtils.listWithAttribute(orgin.getParent(), "xxxxx", orginId);
-			return multipart(paths, pageable, true);
-		}catch(Exception e) {
-			return new PageImpl<Multipart>(new ArrayList<Multipart>());
-		}
-	}
-
 	
-	@Override
-	public Page<Multipart> search(String name, Pageable pageable) {
-		try {
-			Stream<Path> paths = FileSystemUtils.walkFileTreeWithAttribute(root, "filename", name);
-			return multipart(paths, pageable, false);
-		}catch(Exception e) {
-			return new PageImpl<Multipart>(new ArrayList<Multipart>());
-		}
-	}
-
 	
 	
 	private Multipart multipart(Path path) throws Exception{
 		Multipart m = new Multipart();
-		m.setId(root.toUri().relativize(path.toUri()).toString());
+		m.setId(root.toUri().relativize(path.toUri()));
 		m.setFilename(FileSystemUtils.getAttribute(path, "filename"));
 		m.setContentType(FileSystemUtils.getAttribute(path, "contentType"));
 		m.setVersion(Boolean.parseBoolean(FileSystemUtils.getAttribute(path, "version")));
@@ -231,6 +256,56 @@ public class FileSystemMultipartRepository implements MultipartRepository{
 				.collect(Collectors.toList());
 		
 		return new PageImpl<>(list, pageable, func.getTotal());
+	}
+	
+	
+	public Stream<Path> listWithAttribute(Path parent, String key, String value) throws IOException {
+		return Files.list(parent).filter((p) -> {
+			
+			String name = null;
+			try {
+				name = FileSystemUtils.getAttribute(p, key).toUpperCase();
+			}catch(Exception e) {
+				name = p.getFileName().toString().toUpperCase();
+			}
+			return name.contains(value.toUpperCase());
+		});
+	}
+
+	public Stream<Path> walkFileTreeWithAttribute(Path parent, String key, String value) throws IOException {
+		
+		Builder<Path> builder = Stream.builder();
+		Files.walkFileTree(parent, new SimpleFileVisitor<Path>() {
+			@Override
+			public FileVisitResult visitFile(Path p, BasicFileAttributes attrs) throws IOException {
+				
+				String name = null;
+				try {
+					name = FileSystemUtils.getAttribute(p, key).toUpperCase();
+				}catch(Exception e) {
+					name = p.getFileName().toString().toUpperCase();
+				}
+				
+				if(name.contains(value.toUpperCase())) 
+					builder.add(p);
+				return FileVisitResult.CONTINUE;
+			}
+			@Override
+			public FileVisitResult postVisitDirectory(Path p, IOException exc) throws IOException {
+				
+				String name = null;
+				try {
+					name = FileSystemUtils.getAttribute(p, key).toUpperCase();
+				}catch(Exception e) {
+					name = p.getFileName().toString().toUpperCase();
+				}
+				
+				if(name.contains(value.toUpperCase())) 
+					builder.add(p);
+				return FileVisitResult.CONTINUE;
+			}
+		});
+		return builder.build();
 	}
 	
 	private class PageableFunctional {
@@ -309,4 +384,11 @@ public class FileSystemMultipartRepository implements MultipartRepository{
 			};
 		}
 	}
+
+	@Override
+	public Resource<Multipart> toResource(Multipart entity, String httpUrl) {
+		String self = UriComponentsBuilder.fromHttpUrl(httpUrl).path("/").path(entity.getId().toString()).build().toUriString();
+		return new Resource<Multipart>(entity, new Link(self));
+	}
+
 }

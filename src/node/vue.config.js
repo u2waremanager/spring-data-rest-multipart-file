@@ -1,6 +1,6 @@
 module.exports = {
 
-    outputDir : "../main/resources/META-INF/resources/multipart-ui",
+    outputDir : "../src/main/resources/META-INF/resources/multipart-ui",
 
     // baseUrl : "/apis",
     publicPath : "/multipart-ui",
