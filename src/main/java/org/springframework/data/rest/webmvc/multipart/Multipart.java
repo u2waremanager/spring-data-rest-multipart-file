@@ -4,19 +4,19 @@ import com.fasterxml.jackson.annotation.JsonIgnore;
 
 public class Multipart {
 
-	private @JsonIgnore String id;
+	private @JsonIgnore Object id;
 	private @JsonIgnore Object source;
-	private @JsonIgnore boolean version;
+	private @JsonIgnore boolean version = false;
 	
 	private String contentType;
+	private String filename;
 	private Long size;
 	private Long lastModified;
-	private String filename;
 	
-	public String getId() {
+	public Object getId() {
 		return id;
 	}
-	public void setId(String id) {
+	public void setId(Object id) {
 		this.id = id;
 	}
 	public Object getSource() {
@@ -54,5 +54,9 @@ public class Multipart {
 	}
 	public void setVersion(boolean version) {
 		this.version = version;
+	}
+	@Override
+	public String toString() {
+		return "Multipart [id=" + id + ", filename=" + filename + "]";
 	}
 }

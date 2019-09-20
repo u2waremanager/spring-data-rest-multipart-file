@@ -1,0 +1,56 @@
+= spring-data-rest-multipart-file
+
+== Installation (POM)
+[source,xml,indent=1]
+----
+<repository>
+    <id>u2ware-mvm-repo</id>
+    <url>https://raw.github.com/u2ware/u2ware.github.com/mvn-repo/</url>
+</repository>
+
+<dependency>
+    <groupId>io.github.u2ware</groupId>
+    <artifactId>spring-data-rest-multipart-file</artifactId>
+    <version>2.1.5.2.RELEASE</version>
+</dependency>
+----
+
+
+
+== Register MultipartService
+
+Make your spring boot application.
+
+Register link:./src/main/java/org/springframework/data/jpa/repository/query/PredicateBuilder.java[MultipartService] in your spring boot application.
+
+Component name is `mystorage`. it will used resource path.
+
+
+[source,java,indent=1]
+----
+
+@Component("mystorage")
+public class PeopleQuery extends FileSystemService{
+
+}
+----
+
+== Run MultipartService 
+
+run your spring boot application. `$ mvn spring-boot:run`
+
+http://localhost:8080/multipart-ui/mystorage/
+
+
+http://localhost:8080/multipart-docs
+
+
+
+
+
+
+
+
+== License
+spring-data-rest-multipart-file is Open Source software released under the
+http://www.apache.org/licenses/LICENSE-2.0.html[Apache 2.0 license].

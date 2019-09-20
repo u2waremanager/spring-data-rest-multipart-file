@@ -11,13 +11,13 @@ import java.util.Map;
 import javax.servlet.http.HttpServletRequest;
 import javax.servlet.http.HttpServletResponse;
 
-import org.apache.commons.io.IOUtils;
 import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.springframework.core.io.Resource;
 import org.springframework.http.HttpStatus;
 import org.springframework.util.ClassUtils;
 import org.springframework.util.ObjectUtils;
+import org.springframework.util.StreamUtils;
 import org.springframework.util.StringUtils;
 import org.springframework.web.servlet.View;
 
@@ -47,7 +47,7 @@ public class MultipartView implements View {
 		try {
 			String filename = getFilename(request, multipart.getFilename());
 
-			if (isDownload) {
+			if (isDownload || getContentType().contains("octet-stream")) {
 				response.setContentType("application/octet-stream;charset=UTF-8");
 				response.setHeader("Content-Disposition", "attachment; filename=" + filename);
 				response.setHeader("Content-Transfer-Encoding", "binary");
@@ -64,14 +64,20 @@ public class MultipartView implements View {
 			in = getInputStream(request, multipart.getSource());
 			out = response.getOutputStream();
 
-			IOUtils.copy(in, out);
+			StreamUtils.copy(in, out);
 
 		} catch (Exception e) {
 			logger.debug("", e);
 			response.sendError(HttpStatus.NOT_FOUND.value(), e.getMessage());
 		} finally {
-			IOUtils.closeQuietly(in);
-			IOUtils.closeQuietly(out);
+			try {
+				if(in != null) in.close();
+			}catch(Exception e) {
+			}
+			try {
+				if(out != null) out.close();
+			}catch(Exception e) {
+			}
 		}
 	}
 
@@ -82,6 +88,8 @@ public class MultipartView implements View {
 			return Files.newInputStream((Path)source);
 		}else if(ClassUtils.isAssignableValue(Resource.class, source)) {
 			return ((Resource)source).getInputStream();
+		}else if(ClassUtils.isAssignableValue(InputStream.class, source)) {
+			return (InputStream)source;
 		}else {
 			throw new Exception();
 		}

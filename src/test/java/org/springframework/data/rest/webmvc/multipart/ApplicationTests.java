@@ -1,4 +1,4 @@
-package org.springframework.data.rest.webmvc.multipart.test;
+package org.springframework.data.rest.webmvc.multipart;
 
 import static org.springframework.restdocs.mockmvc.MockMvcRestDocumentation.documentationConfiguration;
 
@@ -19,25 +19,28 @@ import org.springframework.web.context.WebApplicationContext;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
-public abstract class ApplicationMockTests {
+public abstract class ApplicationTests {
 
 	protected Log logger = LogFactory.getLog(getClass());
-
 	
-	public final @Rule JUnitRestDocumentation restDocumentation = new JUnitRestDocumentation("target/generated-restdocs-snippets");
-	protected @Value("${spring.data.rest.base-path:}") String springDataRestBasePath;
-	protected @Autowired WebApplicationContext context;
-	protected ApplicationMockMvc $;
+	public final @Rule JUnitRestDocumentation restDocumentation  = new JUnitRestDocumentation();
+	public final String restUrisSchema = "http";
+	public final String restUrisHost = "localhost";
+	public final Integer restUrisPort = 8080;
+	
+	public @Value("${spring.data.rest.base-path:}") String springDataRestBasePath;
+	public @Autowired WebApplicationContext context;
+	public RestMockMvc $;
 	
 	@Before
-	public void before() throws Exception {
-		
+	public void before() {
 		MockMvc mvc = MockMvcBuilders.webAppContextSetup(context)
-				.apply(documentationConfiguration(restDocumentation))
-				.build();
-		this.$ = new ApplicationMockMvc(mvc, springDataRestBasePath);
-		
+				.apply(documentationConfiguration(restDocumentation)
+					//.uris().withScheme(restUrisSchema).withHost(restUrisHost).withPort(restUrisPort)
+				).build();
+		this.$ = new RestMockMvc(mvc, springDataRestBasePath);
+		logger.info("----------------------------------------------------------------------------");
 	}
-
+	
 
 }
