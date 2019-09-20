@@ -27,10 +27,8 @@ import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.data.rest.webmvc.multipart.Multipart;
-import org.springframework.data.rest.webmvc.multipart.UploadDirectory;
 import org.springframework.data.rest.webmvc.multipart.MultipartService;
-import org.springframework.hateoas.Link;
-import org.springframework.hateoas.Resource;
+import org.springframework.data.rest.webmvc.multipart.UploadDirectory;
 import org.springframework.http.MediaType;
 import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
@@ -331,11 +329,5 @@ public class FtpSessionService extends FtpSessionProvider implements MultipartSe
 		}catch(Exception e) {
 			return new PageImpl<Multipart>(new ArrayList<Multipart>());
 		}
-	}
-
-	@Override
-	public Resource<Multipart> toResource(Multipart entity, String httpUrl) {
-		String self = UriComponentsBuilder.fromHttpUrl(httpUrl).path("/").path(""+entity.getId()).build().toUriString();
-		return new Resource<Multipart>(entity, new Link(self));
 	}
 }

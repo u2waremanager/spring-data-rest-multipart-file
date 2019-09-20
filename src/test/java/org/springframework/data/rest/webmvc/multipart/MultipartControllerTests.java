@@ -82,7 +82,6 @@ public class MultipartControllerTests extends ApplicationTests{
 //////		$.GET("m3").P("flag", "history").is2xx();
 //////		$.GET("m4").P("flag", "history").is2xx();
 //////		$.GET("m5").P("flag", "history").is2xx();//.and(docs.updateHistory("update-step3"));;
-//////
 
 		//childs
 		$.GET("m1").P("flag", "childs").is2xx();
@@ -101,7 +100,5 @@ public class MultipartControllerTests extends ApplicationTests{
         
 		$.DELETE("m4").is2xx();
 		$.DELETE("m1").is2xx();
-        
 	}	
-	
 }

@@ -30,12 +30,9 @@ import org.springframework.data.domain.Pageable;
 import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.rest.webmvc.multipart.Multipart;
 import org.springframework.data.rest.webmvc.multipart.MultipartService;
-import org.springframework.hateoas.Link;
-import org.springframework.hateoas.Resource;
 import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.util.UriComponentsBuilder;
 
 public abstract class FileSystemRepository implements MultipartService, InitializingBean{
 
@@ -383,12 +380,6 @@ public abstract class FileSystemRepository implements MultipartService, Initiali
 				}
 			};
 		}
-	}
-
-	@Override
-	public Resource<Multipart> toResource(Multipart entity, String httpUrl) {
-		String self = UriComponentsBuilder.fromHttpUrl(httpUrl).path("/").path(entity.getId().toString()).build().toUriString();
-		return new Resource<Multipart>(entity, new Link(self));
 	}
 
 }

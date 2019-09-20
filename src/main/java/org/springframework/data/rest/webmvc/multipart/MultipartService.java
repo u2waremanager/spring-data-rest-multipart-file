@@ -5,7 +5,6 @@ import java.util.Optional;
 
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.Pageable;
-import org.springframework.hateoas.Resource;
 import org.springframework.util.MultiValueMap;
 import org.springframework.web.multipart.MultipartFile;
 
@@ -24,7 +23,5 @@ public interface MultipartService {
 	public Page<Multipart> versions(String path, Pageable pageable);
 	public Page<Multipart> search(String path, Pageable pageable, MultiValueMap<String,Object> params);
 	public Page<Multipart> childs(String path, Pageable pageable);
-	
-	public Resource<Multipart> toResource(Multipart entity, String httpUrl);
 	
 }

@@ -16,8 +16,10 @@ import org.springframework.data.rest.webmvc.BasePathAwareController;
 import org.springframework.data.rest.webmvc.BaseUri;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.data.web.PagedResourcesAssembler;
+import org.springframework.hateoas.Link;
 import org.springframework.hateoas.Resource;
 import org.springframework.hateoas.ResourceAssembler;
+import org.springframework.hateoas.mvc.BasicLinkBuilder;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.util.AntPathMatcher;
@@ -34,6 +36,7 @@ import org.springframework.web.context.request.ServletRequestAttributes;
 import org.springframework.web.multipart.MultipartFile;
 import org.springframework.web.servlet.HandlerMapping;
 import org.springframework.web.servlet.View;
+import org.springframework.web.util.UriComponentsBuilder;
 
 @BasePathAwareController
 public class MultipartController {
@@ -191,12 +194,6 @@ public class MultipartController {
 	protected @Autowired ApplicationContext context;
 	protected @Autowired PagedResourcesAssembler<Multipart> resourcesAssembler;
 	
-	protected String resolveBaseUri(String beanName) {
-		return baseUri.getUriComponentsBuilder()
-				.pathSegment("multipart")
-				.pathSegment(beanName)
-				.toUriString();
-	}
 	
 	protected MultipartService resolveMultipartService(String beanName) {
 		try {
@@ -206,10 +203,26 @@ public class MultipartController {
 		}
 	}
 	
+	protected UriComponentsBuilder resolveBaseUri(String beanName) {
+		return baseUri.getUriComponentsBuilder()
+				.pathSegment("multipart")
+				.pathSegment(beanName)
+				.path("/");
+	}
+
+	
 	protected ResourceAssembler<Multipart, Resource<Multipart>> resolveResourceAssembler(String beanName, MultipartService service) {
 		return new ResourceAssembler<Multipart, Resource<Multipart>>() {
 			public Resource<Multipart> toResource(Multipart entity) {
-				return service.toResource(entity, resolveBaseUri(beanName));
+				
+				if(entity == null) {
+					logger.info(entity);
+					logger.info(entity);
+					logger.info(entity);
+				}
+				String self = resolveBaseUri(beanName).path(entity.getId().toString()).toUriString();	
+				
+				return new Resource<Multipart>(entity, new Link(self));
 			}
 		};
 	}

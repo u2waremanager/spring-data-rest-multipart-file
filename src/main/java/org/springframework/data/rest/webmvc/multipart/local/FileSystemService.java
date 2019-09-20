@@ -18,17 +18,15 @@ import org.springframework.beans.factory.InitializingBean;
 import org.springframework.data.domain.Page;
 import org.springframework.data.domain.PageImpl;
 import org.springframework.data.domain.Pageable;
+import org.springframework.data.domain.Sort.Order;
 import org.springframework.data.rest.webmvc.ResourceNotFoundException;
 import org.springframework.data.rest.webmvc.multipart.Multipart;
-import org.springframework.data.rest.webmvc.multipart.UploadDirectory;
 import org.springframework.data.rest.webmvc.multipart.MultipartService;
-import org.springframework.hateoas.Link;
-import org.springframework.hateoas.Resource;
+import org.springframework.data.rest.webmvc.multipart.UploadDirectory;
 import org.springframework.http.MediaType;
 import org.springframework.util.MultiValueMap;
 import org.springframework.util.StringUtils;
 import org.springframework.web.multipart.MultipartFile;
-import org.springframework.web.util.UriComponentsBuilder;
 
 public class FileSystemService implements MultipartService, InitializingBean, DisposableBean{
 
@@ -67,8 +65,8 @@ public class FileSystemService implements MultipartService, InitializingBean, Di
 		}catch(Exception e) {
 			m.setFilename(StringUtils.getFilename(file.getFileName().toString()));
 			m.setContentType(Files.isDirectory(file)? UploadDirectory.TEXT_DIRECTORY_VALUE : MediaType.APPLICATION_OCTET_STREAM_VALUE);
-			m.setVersion(false);
 		}
+		m.setVersion(false);
 		m.setSize(Files.size(file));
 		m.setLastModified(Files.getLastModifiedTime(file).toMillis());
 		return m;
@@ -217,7 +215,14 @@ public class FileSystemService implements MultipartService, InitializingBean, Di
 			int end = stx + pageable.getPageSize();
 			AtomicInteger count = new AtomicInteger(0);
 			
+			Optional<Order> directory = pageable.getSort().get().filter((o)->{
+				return "directory".equals(o.getProperty());
+			}).findAny();
+			
+			
 			List<Multipart> list = Files.list(target).filter((p)->{
+				if(! Files.exists(p)) return false;
+				if(directory.isPresent() && ! Files.isDirectory(p)) return false;
 				int idx = count.getAndAdd(1);
 				return idx >= stx && idx < end;
 				
@@ -227,6 +232,7 @@ public class FileSystemService implements MultipartService, InitializingBean, Di
 		        	m.setId(root.toUri().relativize(p.toUri()));
 					return m;
 				}catch(Exception ex) {
+					ex.printStackTrace();
 					return null;
 				}
 			}).collect(Collectors.toList());
@@ -239,13 +245,4 @@ public class FileSystemService implements MultipartService, InitializingBean, Di
 			return new PageImpl<Multipart>(new ArrayList<Multipart>());
 		}
 	}
-
-	
-	@Override
-	public Resource<Multipart> toResource(Multipart entity, String httpUrl) {
-		String self = UriComponentsBuilder.fromHttpUrl(httpUrl).path("/").path(entity.getId().toString()).build().toUriString();
-		return new Resource<Multipart>(entity, new Link(self));
-	}
-	
-	
 }
