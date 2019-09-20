@@ -43,8 +43,8 @@
         v-model="drawer"
         :clipped="$vuetify.breakpoint.lgAndUp">
         
-        <v-container grid-list-md>
-            <v-layout row wrap>
+        <v-container fill-height>
+            <v-layout justify-right>
 
 
                 <kendo-hierarchicaldatasource 
@@ -106,6 +106,7 @@
                         <kendo-grid-column :field="'moment'" :title="'lastModified'" :width="200"/>
                     </kendo-grid>
 <!-- 
+                    <b> 더보기 </b>
                     <pre>{{selectedFile}}</pre>
  -->                
                 </v-flex>
@@ -225,7 +226,7 @@ export default {
                 options.success(this.treeModel);
             }else{
 
-                var url = path+"?flag=childs&sort=filename";
+                var url = path+"?flag=childs&sort=filename&size=50&sort=directory";
                 this.$log.debug(this.$options.name, 'onTreeRead', url);
 
                 this.$axios({
@@ -324,9 +325,11 @@ export default {
         ///////////////////////////////////////////////////////
         //
         ///////////////////////////////////////////////////////
-        onGridChange(newItem){
+        onGridChange(newItem, page){
+
             var path = this.selectedDirectory.id;
-            var url = path+"?flag=childs&sort=filename";
+
+            var url = path+"?flag=childs&sort=filename&page="+(page ? page : 0);
 
             this.$log.debug(this.$options.name, 'onGridChange', url);
             this.$axios({
@@ -337,10 +340,13 @@ export default {
                 this.$log.debug(this.$options.name, 'onGridChange', 'success');
                 var data = result.data._embedded.multiparts;
 
-
                 var selectedIndex = 0;
 
-                this.gridModel.splice(0, this.gridModel.length);
+                if(page == 0){
+                    this.gridModel.splice(0, this.gridModel.length);
+                }else{
+                    this.gridModel.splice(this.gridModel.length-1, 1);
+                }
                 for(var i=0; i < data.length; i++){
                     data[i].bytes = filesize(data[i].size).human('jedec');
                     data[i].id = data[i]._links.self.href;
@@ -350,6 +356,10 @@ export default {
                         selectedIndex = this.gridModel.length;
                     }
                     this.gridModel.push(data[i]);
+                }
+                if(result.data._links.next){
+                    var more = {'contentType' : 'more', 'page' : (page ? page+1 : 1)}
+                    this.gridModel.push(more);
                 }
 
                 if(newItem){
@@ -370,7 +380,19 @@ export default {
             var uid = ev.sender.select();
             this.selectedFile = ev.sender.dataItem(uid);
 
-            if("text/directory" != this.selectedFile.contentType){
+            if("more" == this.selectedFile.contentType){
+                this.drawerRight = false;
+                this.cardModel.splice(0, this.cardModel.length);
+                this.onGridChange(null, this.selectedFile.page);
+
+
+            }else if("text/directory" == this.selectedFile.contentType){
+                this.drawerRight = false;
+                this.cardModel.splice(0, this.cardModel.length);
+
+                //????????                
+
+            }else{
                 this.drawerRight = true;
                 
                 var url =  this.selectedFile.id;
@@ -403,11 +425,8 @@ export default {
                     alert('Multipart repository is not found. Please check your http url. onGridSelect() '+url);
                     this.$log.debug(this.$options.name, 'onGridSelect', error);
                 });
-
-            }else{
-                this.drawerRight = false;
-                this.cardModel.splice(0, this.cardModel.length);
             }
+
         },
 
         ///////////////////////////////////////////////////////
