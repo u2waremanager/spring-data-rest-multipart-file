@@ -6,7 +6,6 @@ import org.apache.commons.logging.Log;
 import org.apache.commons.logging.LogFactory;
 import org.junit.Before;
 import org.junit.Rule;
-import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.beans.factory.annotation.Value;
@@ -20,14 +19,14 @@ import org.springframework.web.context.WebApplicationContext;
 
 @RunWith(SpringRunner.class)
 @SpringBootTest
-public class ApplicationTests {
+public abstract class ApplicationTests {
 
 	protected Log logger = LogFactory.getLog(getClass());
 	
 	public final @Rule JUnitRestDocumentation restDocumentation  = new JUnitRestDocumentation();
 	public final String restUrisSchema = "http";
-	public final String restUrisHost = "devcrawler.hi-class.io";
-	public final Integer restUrisPort = 19086;
+	public final String restUrisHost = "localhost";
+	public final Integer restUrisPort = 8080;
 	
 	public @Value("${spring.data.rest.base-path:}") String springDataRestBasePath;
 	public @Autowired WebApplicationContext context;
@@ -43,8 +42,5 @@ public class ApplicationTests {
 		logger.info("----------------------------------------------------------------------------");
 	}
 	
-	@Test
-	public void contextLoads() throws Exception {
-	}
 
 }

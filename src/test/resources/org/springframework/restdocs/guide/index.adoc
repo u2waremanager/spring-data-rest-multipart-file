@@ -11,64 +11,6 @@ Version {project-version} u2waremanager@gmail.com;
 = spring-data-rest-multipart-file
 
 
-== Overview
-
-[[overview-http-verbs]]
-=== HTTP verbs
-
-|===
-| Verb | Usage
-
-| `GET`
-| Used to retrieve a resource. . 
-
-| `POST`
-| Used to create a new resource. .
-
-| `PATCH`
-| Used to update an existing resource. .
-
-| `DELETE`
-| Used to delete an existing resource. .
-|===
-
-[[overview-http-status-codes]]
-
-|===
-| Status code | Usage
-
-| `200 OK`
-| The request completed successfully
-
-| `201 Created`
-| A new resource has been created successfully. The resource's URI is available from the response's
-`Location` header
-
-| `204 No Content`
-| An update(delete) to an existing resource has been applied successfully
-
-| `400 Bad Request`
-| The request was malformed. The response body will include an error providing further information
-
-| `401 Unauthorized`
-| Access Denied Error
-
-| `404 Not Found`
-| The requested resource did not exist
-
-| `500 Internal Server Error`
-| Internal Server Error
-|===
-
-
-[[overview-hypermedia]]
-=== Hypermedia
-
-RESTful Notes uses hypermedia and resources include links to other resources in their
-responses. Responses are in http://stateless.co/hal_specification.html[Hypertext Application
-from resource to resource.
-Language (HAL)] format. Links can be found beneath the `_links` key. Users of the API should
-not create URIs themselves, instead they should use the above-described links to navigate
 
 :sectnums:
 
@@ -76,176 +18,160 @@ not create URIs themselves, instead they should use the above-described links to
 /////////////////////////////////////////////////////////////////////
 // 
 /////////////////////////////////////////////////////////////////////
-[[ui]]
-== Admin UI
+[[mkdir]]
+== Directory
+====
+[POST]  /multipart-ui/{bean-name}/[{parent-path}] :: 
+====
+include::{snippets}/mkdir-1/request-parameters.adoc[]
 
-====
-[GET]  link:./multipart-ui[/multipart-ui] :: 
-====
+=== mkdir(&Aopf;)
+include::{snippets}/mkdir-1/curl-request.adoc[]
+
+`request`
+include::{snippets}/mkdir-1/http-request.adoc[]
+
+`response`
+include::{snippets}/mkdir-1/http-response.adoc[]
+
+=== mkdir(&Bopf;)
+include::{snippets}/mkdir-2/curl-request.adoc[]
+`request`
+include::{snippets}/mkdir-2/http-request.adoc[]
+`response`
+include::{snippets}/mkdir-2/http-response.adoc[]
 
 /////////////////////////////////////////////////////////////////////
 // 
 /////////////////////////////////////////////////////////////////////
-[[upload]]
-== Upload API
-
+== Upload
 ====
-[POST] /multipart/{uuid...}:: 
+[POST]  /multipart-ui/{bean-name}/[{parent-path}] :: 
 ====
+include::{snippets}/upload-3/request-parts.adoc[]
 
+=== upload(&Copf;)
+include::{snippets}/upload-3/curl-request.adoc[]
+`request`
+include::{snippets}/upload-3/http-request.adoc[]
+`response`
+include::{snippets}/upload-3/http-response.adoc[]
 
-[[upload-step1]]
-=== File 
-==== request
-include::{snippets}/upload-step1/http-request.adoc[]
-include::{snippets}/upload-step1/request-parts.adoc[]
-==== response
-include::{snippets}/upload-step1/http-response.adoc[]
-include::{snippets}/upload-step1/response-fields.adoc[]
-
-
-[[upload-step2]]
-=== Directory
-==== request
-include::{snippets}/upload-step2/http-request.adoc[]
-include::{snippets}/upload-step2/request-parameters.adoc[]
-==== response
-include::{snippets}/upload-step2/http-response.adoc[]
-include::{snippets}/upload-step2/response-fields.adoc[]
-
-
-[[upload-step3]]
-=== Child Directory
-==== request
-include::{snippets}/upload-step3/http-request.adoc[]
-include::{snippets}/upload-step3/request-parameters.adoc[]
-==== response
-include::{snippets}/upload-step3/http-response.adoc[]
-include::{snippets}/upload-step3/response-fields.adoc[]
-
-
-[[upload-step4]]
-=== Child File 
-==== request
-include::{snippets}/upload-step4/http-request.adoc[]
-include::{snippets}/upload-step4/request-parts.adoc[]
-==== response
-include::{snippets}/upload-step4/http-response.adoc[]
-include::{snippets}/upload-step4/response-fields.adoc[]
-
-
+=== upload(&Dopf;)
+include::{snippets}/upload-5/curl-request.adoc[]
+`request`
+include::{snippets}/upload-5/http-request.adoc[]
+`response`
+include::{snippets}/upload-5/http-response.adoc[]
 
 
 
 /////////////////////////////////////////////////////////////////////
 // 
 /////////////////////////////////////////////////////////////////////
-[[read]]
-== Read API
-
+== Download
 ====
-[GET] /multipart/{uuid...}?flag=[download|preview|childs]:: 
+[GET]  /multipart-ui/{bean-name}/[{target-path}]?flag=download :: 
 ====
+include::{snippets}/download-3/request-parameters.adoc[]
 
-[[read-step1]]
-=== Download
-==== request
-include::{snippets}/read-step1/http-request.adoc[]
-include::{snippets}/read-step1/request-parameters.adoc[]
-==== response
-include::{snippets}/read-step1/http-response.adoc[]
+=== download(&Copf;)
+include::{snippets}/download-3/curl-request.adoc[]
+`request`
+include::{snippets}/download-3/http-request.adoc[]
+`response`
+include::{snippets}/download-3/http-response.adoc[]
 
-
-[[read-step2]]
-=== Preview
-==== request
-include::{snippets}/read-step2/http-request.adoc[]
-include::{snippets}/read-step2/request-parameters.adoc[]
-==== response
-include::{snippets}/read-step2/http-response.adoc[]
-
-[[read-step3]]
-=== Childs
-==== request
-include::{snippets}/read-step3/http-request.adoc[]
-include::{snippets}/read-step3/request-parameters.adoc[]
-==== response
-include::{snippets}/read-step3/http-response.adoc[]
-include::{snippets}/read-step3/response-fields.adoc[]
-
-
+=== download(&Dopf;)
+include::{snippets}/download-5/curl-request.adoc[]
+`request`
+include::{snippets}/download-5/http-request.adoc[]
+`response`
+include::{snippets}/download-5/http-response.adoc[]
 
 
 /////////////////////////////////////////////////////////////////////
 // 
 /////////////////////////////////////////////////////////////////////
-[[remove]]
-== Remove API
+== Preview
 ====
-[DELETE] /multipart/{uuid...}:: 
+[GET]  /multipart-ui/{bean-name}/[{target-path}]?flag=preview :: 
 ====
+include::{snippets}/preview-3/request-parameters.adoc[]
 
-[[remove-step1]]
-=== File
-==== request
-include::{snippets}/remove-step1/http-request.adoc[]
-==== response
-include::{snippets}/remove-step1/http-response.adoc[]
+=== preview(&Copf;)
+include::{snippets}/preview-3/curl-request.adoc[]
+`request`
+include::{snippets}/preview-3/http-request.adoc[]
+`response`
+include::{snippets}/preview-3/http-response.adoc[]
 
-
-[[remove-step2]]
-=== Directory
-==== request
-include::{snippets}/remove-step2/http-request.adoc[]
-==== response
-include::{snippets}/remove-step2/http-response.adoc[]
-
+=== preview(&Dopf;)
+include::{snippets}/preview-5/curl-request.adoc[]
+`request`
+include::{snippets}/preview-5/http-request.adoc[]
+`response`
+include::{snippets}/preview-5/http-response.adoc[]
 
 
 /////////////////////////////////////////////////////////////////////
 // 
 /////////////////////////////////////////////////////////////////////
-[[update]]
-== Update API
-
-[[update-step1]]
-=== Rename
+== Metadata
 ====
-[PATCH] /multipart/{uuid...}:: 
+[GET]  /multipart-ui/{bean-name}/[{target-path}] :: 
 ====
-==== request
-include::{snippets}/update-step1/http-request.adoc[]
-include::{snippets}/update-step1/request-fields.adoc[]
-==== response
-include::{snippets}/update-step1/http-response.adoc[]
-include::{snippets}/update-step1/response-fields.adoc[]
 
-[[update-step2]]
-=== Modify
+=== attrs(&Copf;)
+include::{snippets}/attrs-3/curl-request.adoc[]
+`request`
+include::{snippets}/attrs-3/http-request.adoc[]
+`response`
+include::{snippets}/attrs-3/http-response.adoc[]
+
+=== attrs(&Dopf;)
+include::{snippets}/attrs-5/curl-request.adoc[]
+`request`
+include::{snippets}/attrs-5/http-request.adoc[]
+`response`
+include::{snippets}/attrs-5/http-response.adoc[]
+
+
+/////////////////////////////////////////////////////////////////////
+// 
+/////////////////////////////////////////////////////////////////////
+== Metadata List
 ====
-[PUT] /multipart/{uuid...}:: 
+[GET]  /multipart-ui/{bean-name}/[{target-path}]?flag=childs :: 
 ====
-==== request
-include::{snippets}/update-step2/http-request.adoc[]
+include::{snippets}/childs-1/request-parameters.adoc[]
 
-==== response
-include::{snippets}/update-step2/http-response.adoc[]
-include::{snippets}/update-step2/response-fields.adoc[]
+=== childs(&Aopf;)
+include::{snippets}/childs-1/curl-request.adoc[]
+`request`
+include::{snippets}/childs-1/http-request.adoc[]
+`response`
+include::{snippets}/childs-1/http-response.adoc[]
+
+=== childs(&Bopf;)
+include::{snippets}/childs-2/curl-request.adoc[]
+`request`
+include::{snippets}/childs-2/http-request.adoc[]
+`response`
+include::{snippets}/childs-2/http-response.adoc[]
 
 
-[[update-step3]]
-=== History
+/////////////////////////////////////////////////////////////////////
+// 
+/////////////////////////////////////////////////////////////////////
+== Remove
 ====
-[GET] /multipart/{uuid...}?flag=history:: 
+[DELETE]  /multipart-ui/{bean-name}/[{target-path}]:: 
 ====
-==== request
-include::{snippets}/update-step3/http-request.adoc[]
-include::{snippets}/update-step3/request-parameters.adoc[]
 
-==== response
-include::{snippets}/update-step3/http-response.adoc[]
-include::{snippets}/update-step3/response-fields.adoc[]
-
-
-
-
+=== delete(&Copf;)
+include::{snippets}/delete-3/curl-request.adoc[]
+`request`
+include::{snippets}/delete-3/http-request.adoc[]
+`response`
+include::{snippets}/delete-3/http-response.adoc[]

@@ -16,9 +16,15 @@
 ----
 
 
-== Requried
 
-link:./src/main/java/org/springframework/data/jpa/repository/query/PredicateBuilder.java[MultipartService] 를 bean 등록 합니다.
+== Register MultipartService
+
+Make your spring boot application.
+
+Register link:./src/main/java/org/springframework/data/jpa/repository/query/PredicateBuilder.java[MultipartService] in your spring boot application.
+
+Component name is `mystorage`. it will used resource path.
+
 
 [source,java,indent=1]
 ----
@@ -29,9 +35,11 @@ public class PeopleQuery extends FileSystemService{
 }
 ----
 
-== Run
+== Run MultipartService 
 
-$ mvn spring-boot:run
+run your spring boot application. `$ mvn spring-boot:run`
+
+http://localhost:8080/multipart-ui/mystorage/
 
 
 http://localhost:8080/multipart-docs
@@ -39,7 +47,6 @@ http://localhost:8080/multipart-docs
 
 
 
-http://localhost:8080/multipart-ui/mystorage/
 
 
 

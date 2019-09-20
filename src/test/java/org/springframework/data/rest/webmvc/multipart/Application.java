@@ -13,7 +13,7 @@ public class Application {
 	}
 
 	
-	@Bean("default")
+	@Bean("mystorage")
 	public MultipartService mutipartService1() {
 		return new FileSystemService();
 	}
