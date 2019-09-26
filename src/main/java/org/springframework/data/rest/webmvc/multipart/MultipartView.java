@@ -46,13 +46,13 @@ public class MultipartView implements View {
 		OutputStream out =  null;
 		try {
 			String filename = getFilename(request, multipart.getFilename());
-
-			if (isDownload || getContentType().contains("octet-stream")) {
+			
+			if (isDownload) {
 				response.setContentType("application/octet-stream;charset=UTF-8");
 				response.setHeader("Content-Disposition", "attachment; filename=" + filename);
 				response.setHeader("Content-Transfer-Encoding", "binary");
 			} else {
-				response.setContentType(getContentType());
+				//response.setContentType(getContentType());
 				response.setHeader("Content-Disposition", "inline; filename="+ filename);
 			}
 			response.setHeader("Cache-Control", "no-cache, no-store, must-revalidate"); // HTTP 1.1.

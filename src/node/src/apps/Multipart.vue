@@ -278,7 +278,7 @@ export default {
             this.drawerRight = false;
             this.selectedFile = null;
             this.onBreadcrumbsChange();
-            this.onGridChange();
+            this.onGridChange(undefined, 0);
         },
         
         onTreeExpand(e) {
@@ -506,16 +506,35 @@ export default {
         download(href, download) {
             this.$log.debug(this.$options.name, "download", href, download);
 
-            const a = document.createElement('a');
-            a.href = href;
-            a.download = download;
-            a.style.display = 'none';
-            document.body.appendChild(a);
-            a.click();
-            setTimeout(() => {
+            var str = href.replace("http://devfile.hi-class.io:19085/multipart/streaming/", "http://streaming.hi-class.io/");
+                
+            this.$axios({
+                method:  'get',
+                url: str,
+                responseType : "blob"
+
+            }).then((response) => {
+                
+                var blob = new Blob([response.data], {type: 'application/octet-stream'});
+
+                //MSIE
+                if (typeof window.navigator.msSaveBlob !== 'undefined') {
+                    window.navigator.msSaveBlob(blob, download);
+                    return;
+                }
+                
+                var blobURL = window.URL.createObjectURL(blob);
+
+                const a = document.createElement('a');
+                a.style.display = 'none';
+                a.href = blobURL ;// or href;
+                a.download = download // or force filename;
+                document.body.appendChild(a);
+                a.click();
                 document.body.removeChild(a);
-                window.URL.revokeObjectURL(href);
-            }, 100);
+
+                window.URL.revokeObjectURL(blobURL); // or href
+            });
         }
     },
     created: function() {
